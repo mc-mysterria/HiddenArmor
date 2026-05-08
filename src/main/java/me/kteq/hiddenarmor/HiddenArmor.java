@@ -17,7 +17,7 @@ import me.kteq.hiddenarmor.listener.packet.SetSlotPacketListener;
 import me.kteq.hiddenarmor.listener.packet.WindowItemsPacketListener;
 import me.kteq.hiddenarmor.manager.PlayerManager;
 import me.kteq.hiddenarmor.util.ConfigHolder;
-import me.kteq.hiddenarmor.util.Metrics;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public final class HiddenArmor extends JavaPlugin {
     private ArmorPlaceholderHandler armorPlaceholderHandler;
     private MessageHandler messageHandler;
 
-    private List<ConfigHolder> configHolders;
+    private final List<ConfigHolder> configHolders = new ArrayList<>();
 
     @Override
     public void onLoad() {
@@ -43,47 +43,44 @@ public final class HiddenArmor extends JavaPlugin {
         this.saveDefaultConfig();
         checkConfig();
 
-        this.messageHandler = new MessageHandler(this, "&c[&fHiddenArmor&c] &f");
+        this.messageHandler = new MessageHandler(this, "<red>[<white>HiddenArmor<red>] <white>");
         this.armorUpdater = new ArmorUpdateHandler(this);
         this.playerManager = new PlayerManager(this);
         this.armorPlaceholderHandler = new ArmorPlaceholderHandler(this);
 
-        new ToggleArmorCommand(this, "togglearmor")
-                .setPermission("hiddenarmor")
-                .setPermissionRequired(false);
-        new HiddenArmorCommand(this, "hiddenarmor")
-                .setPermission("hiddenarmor")
-                .setPermissionRequired(false)
-                .setTabCompleter(new HiddenArmorTabCompleter(this));
+        registerCommands();
+        registerListeners();
 
         PacketEvents.getAPI().init();
 
-        PacketEvents.getAPI().getEventManager().registerListeners(
-                new SetSlotPacketListener(this),
-                new WindowItemsPacketListener(this),
-                new EntityEquipmentPacketListener(this)
-        );
-
-        new InventoryShiftClickListener(this);
-        new GameModeListener(this);
-        new PotionEffectListener(this);
-        new EntityToggleGlideListener(this);
-
         reloadConfig();
+    }
 
-        new Metrics(this, 14419);
+    private void registerCommands() {
+        new ToggleArmorCommand(this, "togglearmor").setPermission("hiddenarmor.toggle").setPermissionRequired(false);
+        new HiddenArmorCommand(this, "hiddenarmor").setPermission("hiddenarmor").setPermissionRequired(false).setTabCompleter(new HiddenArmorTabCompleter(this));
+    }
+
+    private void registerListeners() {
+        PacketEvents.getAPI().getEventManager().registerListeners(new SetSlotPacketListener(this), new WindowItemsPacketListener(this), new EntityEquipmentPacketListener(this));
+
+        getServer().getPluginManager().registerEvents(new InventoryShiftClickListener(this), this);
+        getServer().getPluginManager().registerEvents(new GameModeListener(this), this);
+        getServer().getPluginManager().registerEvents(new PotionEffectListener(this), this);
+        getServer().getPluginManager().registerEvents(new EntityToggleGlideListener(this), this);
     }
 
     @Override
     public void onDisable() {
-        playerManager.saveCurrentEnabledPlayers();
+        if (playerManager != null) {
+            playerManager.saveCurrentEnabledPlayers();
+        }
         PacketEvents.getAPI().terminate();
     }
 
     private void checkConfig() {
         reloadConfig();
-        if (getConfig().getInt("config-version") >= getConfig().getDefaults().getInt("config-version"))
-            return;
+        if (getConfig().getInt("config-version") >= getConfig().getDefaults().getInt("config-version")) return;
         getLogger().log(Level.WARNING, "Your HiddenArmor configuration file is outdated!");
         getLogger().log(Level.WARNING, "Please regenerate the 'config.yml' file when possible.");
     }
@@ -91,9 +88,9 @@ public final class HiddenArmor extends JavaPlugin {
     @Override
     public void reloadConfig() {
         super.reloadConfig();
-        if (configHolders == null)
-            configHolders = new ArrayList<>();
-        configHolders.forEach(c -> c.loadConfig(getConfig()));
+        if (configHolders != null) {
+            configHolders.forEach(c -> c.loadConfig(getConfig()));
+        }
     }
 
     public void addConfigHolder(ConfigHolder configHolder) {

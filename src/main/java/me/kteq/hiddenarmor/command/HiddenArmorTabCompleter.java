@@ -2,7 +2,6 @@ package me.kteq.hiddenarmor.command;
 
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.util.ConfigHolder;
-import me.kteq.hiddenarmor.util.PermissionUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
@@ -24,13 +23,12 @@ public class HiddenArmorTabCompleter implements TabCompleter, ConfigHolder {
         if (args.length > 1) return null;
         List<String> options = new ArrayList<>();
 
-
-        if (PermissionUtil.canUse(sender, "hiddenarmor.toggle") || defaultPermissionToggle) {
+        if (sender.hasPermission("hiddenarmor.toggle") || defaultPermissionToggle) {
             options.add("toggle");
             options.add("hide");
             options.add("show");
         }
-        if (PermissionUtil.canUse(sender, "hiddenarmor.reload")) {
+        if (sender.hasPermission("hiddenarmor.reload")) {
             options.add("reload");
         }
         options.add("help");

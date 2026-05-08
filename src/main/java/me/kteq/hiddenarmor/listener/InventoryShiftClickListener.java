@@ -3,7 +3,6 @@ package me.kteq.hiddenarmor.listener;
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.handler.ArmorUpdateHandler;
 import me.kteq.hiddenarmor.manager.PlayerManager;
-import me.kteq.hiddenarmor.util.EventUtil;
 import me.kteq.hiddenarmor.util.ItemUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,13 +14,13 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class InventoryShiftClickListener implements Listener {
+
     private final HiddenArmor plugin;
+
     private final PlayerManager hiddenArmorManager;
     private final ArmorUpdateHandler armorUpdater;
 
     public InventoryShiftClickListener(HiddenArmor plugin) {
-        EventUtil.register(this, plugin);
-
         this.plugin = plugin;
         this.hiddenArmorManager = plugin.getPlayerManager();
         this.armorUpdater = plugin.getArmorUpdater();

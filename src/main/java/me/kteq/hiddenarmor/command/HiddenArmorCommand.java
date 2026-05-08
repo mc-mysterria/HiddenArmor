@@ -1,12 +1,10 @@
 package me.kteq.hiddenarmor.command;
 
 import me.kteq.hiddenarmor.HiddenArmor;
-import me.kteq.hiddenarmor.command.util.AbstractCommand;
-import me.kteq.hiddenarmor.command.util.CommandStatus;
+import me.kteq.hiddenarmor.command.source.AbstractCommand;
 import me.kteq.hiddenarmor.handler.MessageHandler;
 import me.kteq.hiddenarmor.manager.PlayerManager;
 import me.kteq.hiddenarmor.util.ConfigHolder;
-import me.kteq.hiddenarmor.util.PermissionUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -31,10 +29,10 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
     }
 
     @Override
-    public CommandStatus execute(CommandSender sender, Command command, String[] arguments) throws Exception {
+    public Status execute(CommandSender sender, Command command, String[] arguments) throws Exception {
         if ((arguments.length < 1) || (arguments[0].equalsIgnoreCase("help"))) {
             help(sender);
-            return CommandStatus.SUCCESS;
+            return Status.SUCCESS;
         }
 
         MessageHandler messageHandler = plugin.getMessageHandler();
@@ -48,15 +46,15 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
                 plugin.reloadConfig();
                 messageHandler.reloadLocales();
                 messageHandler.message(sender, "%reload-success%", true);
-                return CommandStatus.SUCCESS;
+                return Status.SUCCESS;
             case "toggle":
             case "hide":
             case "show":
                 if (!toggleArmor(sender, arguments)) break;
-                return CommandStatus.SUCCESS;
+                return Status.SUCCESS;
         }
 
-        return CommandStatus.INVALID_USAGE;
+        return Status.INVALID_USAGE;
     }
 
     private boolean toggleArmor(CommandSender sender, String[] arguments) {
@@ -105,24 +103,24 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
 
     private void help(CommandSender sender) {
         MessageHandler messageHandler = plugin.getMessageHandler();
-        messageHandler.message(sender, "&6----------[ &fHiddenArmor &6]-----------------");
+        messageHandler.message(sender, "<gold>----------[ <white>HiddenArmor <gold>]-----------------");
 
         // hiddenarmor <toggle/hide/show>
-        if (PermissionUtil.canUse(sender, "hiddenarmor.toggle") || defaultPermissionToggle)
-            messageHandler.message(sender, "&e/hiddenarmor <toggle/hide/show> &6- %help-togglearmor%");
+        if (sender.hasPermission("hiddenarmor.toggle") || defaultPermissionToggle)
+            messageHandler.message(sender, "<yellow>/hiddenarmor <toggle/hide/show> <gold>- %help-togglearmor%");
 
         // hiddenarmor <toggle/hide/show> <player>
-        if (PermissionUtil.canUse(sender, "hiddenarmor.toggle.other") || (defaultPermissionToggle && defaultPermissionToggleOther))
-            messageHandler.message(sender, "&e/hiddenarmor <toggle/hide/show> [%player%] &6- %help-togglearmor-other%");
+        if (sender.hasPermission("hiddenarmor.toggle.other") || (defaultPermissionToggle && defaultPermissionToggleOther))
+            messageHandler.message(sender, "<yellow>/hiddenarmor <toggle/hide/show> [%player%] <gold>- %help-togglearmor-other%");
 
         // hiddenarmor reload
-        if (PermissionUtil.canUse(sender, "hiddenarmor.reload"))
-            messageHandler.message(sender, "&e/hiddenarmor reload &6- %help-reload%");
+        if (sender.hasPermission("hiddenarmor.reload"))
+            messageHandler.message(sender, "<yellow>/hiddenarmor reload <gold>- %help-reload%");
 
         // help
-        messageHandler.message(sender, "&e/hiddenarmor help &6- %help-help%");
+        messageHandler.message(sender, "<yellow>/hiddenarmor help <gold>- %help-help%");
 
-        messageHandler.message(sender, "&6----------------------------------------");
+        messageHandler.message(sender, "<gold>----------------------------------------");
     }
 
     @Override

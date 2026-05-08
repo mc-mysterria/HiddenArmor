@@ -3,11 +3,13 @@ package me.kteq.hiddenarmor.handler;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import me.kteq.hiddenarmor.HiddenArmor;
-import me.kteq.hiddenarmor.util.protocol.ProtocolUtil;
+import me.kteq.hiddenarmor.util.ItemUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -27,10 +29,10 @@ public class ArmorUpdateHandler {
 
     public void updateSelf(Player player) {
         PlayerInventory inv = player.getInventory();
-        for (int i = 5; i <= 8; i++) {
-            ItemStack armor = ProtocolUtil.getArmor(ProtocolUtil.ArmorType.getType(i), inv);
+        for (ItemUtil.ArmorSlot slot : ItemUtil.ArmorSlot.values()) {
+            ItemStack armor = ItemUtil.getArmor(slot, inv);
             WrapperPlayServerSetSlot packet = new WrapperPlayServerSetSlot(
-                    0, 0, i, SpigotConversionUtil.fromBukkitItemStack(armor)
+                    0, 0, slot.getSlotId(), SpigotConversionUtil.fromBukkitItemStack(armor)
             );
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
         }
@@ -40,14 +42,23 @@ public class ArmorUpdateHandler {
         PlayerInventory inv = player.getInventory();
 
         List<Equipment> equipmentList = new ArrayList<>();
-        equipmentList.add(new Equipment(EquipmentSlot.HELMET, SpigotConversionUtil.fromBukkitItemStack(ProtocolUtil.getArmor(ProtocolUtil.ArmorType.HELMET, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.CHEST_PLATE, SpigotConversionUtil.fromBukkitItemStack(ProtocolUtil.getArmor(ProtocolUtil.ArmorType.CHEST, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.LEGGINGS, SpigotConversionUtil.fromBukkitItemStack(ProtocolUtil.getArmor(ProtocolUtil.ArmorType.LEGGS, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.BOOTS, SpigotConversionUtil.fromBukkitItemStack(ProtocolUtil.getArmor(ProtocolUtil.ArmorType.BOOTS, inv))));
+        equipmentList.add(new Equipment(EquipmentSlot.HELMET, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.HELMET, inv))));
+        equipmentList.add(new Equipment(EquipmentSlot.CHEST_PLATE, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.CHEST, inv))));
+        equipmentList.add(new Equipment(EquipmentSlot.LEGGINGS, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.LEGS, inv))));
+        equipmentList.add(new Equipment(EquipmentSlot.BOOTS, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.BOOTS, inv))));
         equipmentList.add(new Equipment(EquipmentSlot.MAIN_HAND, SpigotConversionUtil.fromBukkitItemStack(inv.getItemInMainHand().clone())));
         equipmentList.add(new Equipment(EquipmentSlot.OFF_HAND, SpigotConversionUtil.fromBukkitItemStack(inv.getItemInOffHand().clone())));
 
         WrapperPlayServerEntityEquipment packet = new WrapperPlayServerEntityEquipment(player.getEntityId(), equipmentList);
-        ProtocolUtil.broadcastPlayerPacket(packet, player);
+        broadcastPlayerPacket(packet, player);
+    }
+
+    private void broadcastPlayerPacket(PacketWrapper<?> packet, Player player) {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (!p.getWorld().equals(player.getWorld())) continue;
+            if (p.getLocation().distanceSquared(player.getLocation()) > 16384) continue; // 128 blocks squared
+            if (p.equals(player)) continue;
+            PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet);
+        }
     }
 }

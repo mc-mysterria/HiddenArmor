@@ -13,7 +13,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class SetSlotPacketListener extends PacketListenerAbstract {
+
     private final PlayerManager playerManager;
+
     private final ArmorPlaceholderHandler placeholderHandler;
 
     public SetSlotPacketListener(HiddenArmor plugin) {

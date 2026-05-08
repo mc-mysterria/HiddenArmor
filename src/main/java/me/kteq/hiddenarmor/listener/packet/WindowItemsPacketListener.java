@@ -16,7 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WindowItemsPacketListener extends PacketListenerAbstract {
+
     private final PlayerManager playerManager;
+
     private final ArmorPlaceholderHandler placeholderHandler;
 
     public WindowItemsPacketListener(HiddenArmor plugin) {

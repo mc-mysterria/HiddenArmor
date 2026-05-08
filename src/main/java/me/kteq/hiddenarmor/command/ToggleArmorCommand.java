@@ -1,8 +1,7 @@
 package me.kteq.hiddenarmor.command;
 
 import me.kteq.hiddenarmor.HiddenArmor;
-import me.kteq.hiddenarmor.command.util.AbstractCommand;
-import me.kteq.hiddenarmor.command.util.CommandStatus;
+import me.kteq.hiddenarmor.command.source.AbstractCommand;
 import me.kteq.hiddenarmor.handler.MessageHandler;
 import me.kteq.hiddenarmor.manager.PlayerManager;
 import me.kteq.hiddenarmor.util.ConfigHolder;
@@ -29,27 +28,27 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
     }
 
     @Override
-    public CommandStatus execute(CommandSender sender, Command command, String[] arguments) {
+    public Status execute(CommandSender sender, Command command, String[] arguments) {
         PlayerManager hiddenArmorManager = plugin.getPlayerManager();
 
         Player player;
         MessageHandler messageHandler = plugin.getMessageHandler();
-        if (!hasSubPermission(sender, "toggle") && !defaultPermissionToggle) return CommandStatus.NO_PERMISSION;
+        if (!hasSubPermission(sender, "toggle") && !defaultPermissionToggle) return Status.NO_PERMISSION;
         if (arguments.length == 1) {
             if (!hasSubPermission(sender, "toggle.other") && !defaultPermissionToggleOther)
-                return CommandStatus.NO_PERMISSION;
+                return Status.NO_PERMISSION;
             String playerName = arguments[0];
             player = Bukkit.getPlayer(playerName);
 
             if (player == null) {
                 messageHandler.message(sender, "%player-not-found%");
-                return CommandStatus.SUCCESS;
+                return Status.SUCCESS;
             }
         } else {
             if (sender instanceof ConsoleCommandSender) {
                 messageHandler.message(sender, "%console-togglearmor-warning%");
                 sendUsage(sender);
-                return CommandStatus.SUCCESS;
+                return Status.SUCCESS;
             } else {
                 player = (Player) sender;
             }
@@ -63,7 +62,7 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
             placeholderMap.put("player", player.getName());
             messageHandler.message(sender, "%armor-visibility-other%", false, placeholderMap);
         }
-        return CommandStatus.SUCCESS;
+        return Status.SUCCESS;
     }
 
     public void sendUsage(CommandSender sender) {

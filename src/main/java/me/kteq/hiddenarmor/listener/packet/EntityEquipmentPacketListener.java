@@ -21,6 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 public class EntityEquipmentPacketListener extends PacketListenerAbstract implements ConfigHolder {
+
     private final PlayerManager hiddenArmorManager;
 
     private boolean ignoreLeatherArmor;
@@ -71,7 +72,7 @@ public class EntityEquipmentPacketListener extends PacketListenerAbstract implem
         Material material = itemStack.getType();
         return (ignoreLeatherArmor && material.toString().startsWith("LEATHER")) ||
                 (ignoreTurtleHelmet && material == Material.TURTLE_HELMET) ||
-                (!ItemUtil.isArmor(itemStack) && material != Material.ELYTRA) ||
+                (ItemUtil.isNotArmorPiece(itemStack) && material != Material.ELYTRA) ||
                 (ignoreElytra && material == Material.ELYTRA);
     }
 

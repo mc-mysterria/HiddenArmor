@@ -1,32 +1,38 @@
-package me.kteq.hiddenarmor.command.util;
+package me.kteq.hiddenarmor.command.source;
 
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.handler.MessageHandler;
 import org.bukkit.command.*;
 
+import java.util.logging.Level;
+
 
 public abstract class AbstractCommand implements CommandExecutor {
 
     protected final HiddenArmor plugin;
-
-    private PluginCommand pluginCommand;
+    private final PluginCommand pluginCommand;
 
     private String permission = null;
     private boolean permissionRequired = true;
     private boolean playerOnly = false;
 
+    public enum Status {
+        SUCCESS,
+        ERROR,
+        INVALID_USAGE,
+        NO_PERMISSION
+    }
+
     public AbstractCommand(HiddenArmor plugin, String command) {
         this.plugin = plugin;
-        PluginCommand pluginCommand = plugin.getCommand(command);
+        this.pluginCommand = plugin.getCommand(command);
+        
         if (pluginCommand != null) {
             pluginCommand.setExecutor(this);
+            this.permission = pluginCommand.getPermission();
         } else {
             plugin.getLogger().severe("Could not register '/" + command + "' command. Is it present on plugin.yml?");
-            return;
         }
-
-        this.permission = pluginCommand.getPermission();
-        this.pluginCommand = pluginCommand;
     }
 
     @Override
@@ -40,19 +46,16 @@ public abstract class AbstractCommand implements CommandExecutor {
             messageHandler.message(sender, "%command-no-permission%");
             return true;
         }
-        CommandStatus commandStatus;
+        
         try {
-            commandStatus = execute(sender, command, args);
+            Status status = execute(sender, command, args);
+            switch (status) {
+                case INVALID_USAGE -> messageHandler.message(sender, "%command-invalid%");
+                case NO_PERMISSION -> messageHandler.message(sender, "%command-no-permission%");
+            }
         } catch (Exception e) {
             messageHandler.message(sender, "%command-error%");
-            throw new RuntimeException(e);
-        }
-        switch (commandStatus) {
-            case INVALID_USAGE:
-                messageHandler.message(sender, "%command-invalid%");
-                break;
-            case NO_PERMISSION:
-                messageHandler.message(sender, "%command-no-permission%");
+            plugin.getLogger().log(Level.SEVERE, "Error executing command /" + label, e);
         }
         return true;
     }
@@ -96,10 +99,12 @@ public abstract class AbstractCommand implements CommandExecutor {
     }
 
     public AbstractCommand setTabCompleter(TabCompleter tabCompleter) {
-        pluginCommand.setTabCompleter(tabCompleter);
+        if (pluginCommand != null) {
+            pluginCommand.setTabCompleter(tabCompleter);
+        }
         return this;
     }
 
-    public abstract CommandStatus execute(CommandSender sender, Command command, String[] arguments) throws Exception;
+    public abstract Status execute(CommandSender sender, Command command, String[] arguments) throws Exception;
 
 }

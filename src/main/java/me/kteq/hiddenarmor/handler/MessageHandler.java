@@ -1,13 +1,9 @@
 package me.kteq.hiddenarmor.handler;
 
 import me.kteq.hiddenarmor.HiddenArmor;
+import me.kteq.hiddenarmor.util.ColorUtil;
 import me.kteq.hiddenarmor.util.ConfigHolder;
-import me.kteq.hiddenarmor.util.ConfigUtil;
-import me.kteq.hiddenarmor.util.StrUtil;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -22,9 +18,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class MessageHandler implements ConfigHolder {
+
     private final Plugin plugin;
+
     private String defaultLocale;
     private String prefix = "";
+
     private Map<String, FileConfiguration> localeMap;
 
     public MessageHandler(HiddenArmor plugin, String prefix) {
@@ -48,10 +47,20 @@ public class MessageHandler implements ConfigHolder {
 
         localeMap = new HashMap<>();
         File localeFolder = new File(plugin.getDataFolder().getAbsolutePath() + "/locale");
-        for (File file : localeFolder.listFiles()) {
-            FileConfiguration localeYaml = ConfigUtil.getYamlConfiguration(file);
-            localeMap.put(file.getName().replaceAll(".yml", ""), localeYaml);
+        File[] files = localeFolder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                FileConfiguration localeYaml = getYamlConfiguration(file);
+                if (localeYaml != null) {
+                    localeMap.put(file.getName().replaceAll(".yml", ""), localeYaml);
+                }
+            }
         }
+    }
+
+    private FileConfiguration getYamlConfiguration(File file) {
+        if (file == null || !file.exists()) return null;
+        return YamlConfiguration.loadConfiguration(file);
     }
 
     public void setDefaultLocale(String defaultLocale) {
@@ -63,43 +72,41 @@ public class MessageHandler implements ConfigHolder {
     }
 
     public void message(CommandSender sender, String message) {
-        message(ChatMessageType.CHAT, sender, message, false);
+        message(sender, message, false);
     }
 
     public void message(CommandSender sender, String message, boolean prefix) {
-        message(ChatMessageType.CHAT, sender, message, prefix);
+        message(sender, message, prefix, new HashMap<>());
     }
 
     public void message(CommandSender sender, String message, boolean prefix, Map<String, String> placeholderMap) {
-        message(ChatMessageType.CHAT, sender, message, prefix, placeholderMap);
-    }
-
-    public void message(ChatMessageType messageType, CommandSender sender, String message, boolean prefix) {
-        message(messageType, sender, message, prefix, new HashMap<>());
-    }
-
-    public void message(ChatMessageType messageType, CommandSender sender, String message, boolean prefix, Map<String, String> placeholderMap) {
         message = replaceHoldersFromConfig(sender, message);
 
-        for (String placeholder : placeholderMap.keySet()) {
-            String value = placeholderMap.get(placeholder);
-            value = replaceHoldersFromConfig(sender, value);
-
-            message = message.replaceAll("%" + placeholder + "%", value);
+        for (Map.Entry<String, String> entry : placeholderMap.entrySet()) {
+            String value = replaceHoldersFromConfig(sender, entry.getValue());
+            message = message.replaceAll("%" + entry.getKey() + "%", value);
         }
 
         if (prefix) {
             message = this.prefix + message;
         }
 
-        if (sender instanceof Player player) {
-            player.spigot().sendMessage(messageType, new TextComponent(StrUtil.color(message)));
-        } else if (sender instanceof ConsoleCommandSender && messageType.equals(ChatMessageType.CHAT)) {
-            sender.sendMessage(StrUtil.color(message));
+        sender.sendMessage(ColorUtil.color(message));
+    }
+
+    public void sendActionBar(Player player, String message, Map<String, String> placeholderMap) {
+        message = replaceHoldersFromConfig(player, message);
+
+        for (Map.Entry<String, String> entry : placeholderMap.entrySet()) {
+            String value = replaceHoldersFromConfig(player, entry.getValue());
+            message = message.replaceAll("%" + entry.getKey() + "%", value);
         }
+
+        player.sendActionBar(ColorUtil.color(message));
     }
 
     private String replaceHoldersFromConfig(CommandSender sender, String message) {
+        if (message == null) return null;
         for (String string : message.split("%")) {
             if (string.contains(" ")) continue;
             String localizedMessage = getLocalizedMessage(sender, string);
@@ -113,12 +120,7 @@ public class MessageHandler implements ConfigHolder {
     }
 
     private String getLocalizedMessage(CommandSender sender, String messageKey) {
-        String locale;
-        if (sender instanceof Player player) {
-            locale = player.getLocale();
-        } else {
-            locale = defaultLocale;
-        }
+        String locale = (sender instanceof Player player) ? player.getLocale() : defaultLocale;
         FileConfiguration localeYaml = localeMap.get(locale);
         if (localeYaml == null) {
             localeYaml = localeMap.get(defaultLocale);
@@ -132,8 +134,8 @@ public class MessageHandler implements ConfigHolder {
 
     private FileConfiguration getDefaultResourceLocale() {
         InputStream inputStream = plugin.getResource("locale/en_us.yml");
-        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-        return YamlConfiguration.loadConfiguration(inputStreamReader);
+        if (inputStream == null) return new YamlConfiguration();
+        return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
     }
 
     @Override

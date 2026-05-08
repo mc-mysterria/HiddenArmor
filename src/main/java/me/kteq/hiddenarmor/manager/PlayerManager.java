@@ -17,18 +17,20 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-
 public class PlayerManager implements ConfigHolder {
+
     private final HiddenArmor plugin;
+
     private final ArmorUpdateHandler armorUpdater;
     private final MessageHandler messageHandler;
+    
     private final Set<Predicate<Player>> forceDisablePredicates = new HashSet<>();
     private final Set<Predicate<Player>> forceEnablePredicates = new HashSet<>();
-    private File enabledPlayersFile = null;
+    
+    private File enabledPlayersFile;
     private FileConfiguration enabledPlayersConfig;
     private boolean invisibleAlwaysHideGear;
     private Set<UUID> enabledPlayersUUID = new HashSet<>();
-
 
     public PlayerManager(HiddenArmor plugin) {
         this.plugin = plugin;
@@ -50,9 +52,8 @@ public class PlayerManager implements ConfigHolder {
     public void enablePlayer(Player player, boolean inform) {
         if (isEnabled(player)) return;
         if (inform) {
-            Map<String, String> placeholderMap = new HashMap<>();
-            placeholderMap.put("visibility", "%visibility-hidden%");
-            messageHandler.message(ChatMessageType.ACTION_BAR, player, "%armor-visibility%", false, placeholderMap);
+            Map<String, String> placeholders = Map.of("visibility", "%visibility-hidden%");
+            messageHandler.sendActionBar(player, "%armor-visibility%", placeholders);
         }
 
         this.enabledPlayersUUID.add(player.getUniqueId());
@@ -62,9 +63,8 @@ public class PlayerManager implements ConfigHolder {
     public void disablePlayer(Player player, boolean inform) {
         if (!isEnabled(player)) return;
         if (inform) {
-            Map<String, String> placeholderMap = new HashMap<>();
-            placeholderMap.put("visibility", "%visibility-shown%");
-            messageHandler.message(ChatMessageType.ACTION_BAR, player, "%armor-visibility%", false, placeholderMap);
+            Map<String, String> placeholders = Map.of("visibility", "%visibility-shown%");
+            messageHandler.sendActionBar(player, "%armor-visibility%", placeholders);
         }
 
         enabledPlayersUUID.remove(player.getUniqueId());
@@ -77,52 +77,56 @@ public class PlayerManager implements ConfigHolder {
 
     public boolean isArmorVisible(Player player) {
         boolean hidden = isEnabled(player);
-        for (Predicate<Player> predicate : forceDisablePredicates) {
+        
+        for (var predicate : forceDisablePredicates) {
             if (predicate.test(player)) {
                 hidden = false;
                 break;
             }
         }
-        for (Predicate<Player> predicate : forceEnablePredicates) {
-            if (predicate.test(player)) {
-                hidden = true;
-                break;
+        
+        if (!hidden) {
+            for (var predicate : forceEnablePredicates) {
+                if (predicate.test(player)) {
+                    hidden = true;
+                    break;
+                }
             }
         }
+        
         return !hidden;
     }
 
     private void registerDefaultPredicates() {
-        forceDisablePredicates.add(player -> player.getGameMode().equals(GameMode.CREATIVE));
+        forceDisablePredicates.add(player -> player.getGameMode() == GameMode.CREATIVE);
         forceDisablePredicates.add(player -> player.isInvisible() && !invisibleAlwaysHideGear);
 
         forceEnablePredicates.add(player -> player.isInvisible() && invisibleAlwaysHideGear);
     }
 
     public void saveCurrentEnabledPlayers() {
-        List<String> enabledUUIDs = this.enabledPlayersUUID.stream().map(UUID::toString).collect(Collectors.toList());
+        List<String> enabledUUIDs = this.enabledPlayersUUID.stream()
+                .map(UUID::toString)
+                .toList();
 
         enabledPlayersConfig.set("enabled-players", enabledUUIDs);
         try {
             enabledPlayersConfig.save(enabledPlayersFile);
         } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Could not save enabled players to " + enabledPlayersFile, e);
+            plugin.getLogger().log(Level.WARNING, "Could not save enabled players", e);
         }
     }
 
     private void loadEnabledPlayers() {
-        loadEnabledPlayersConfig();
-        this.enabledPlayersUUID = enabledPlayersConfig.getStringList("enabled-players").stream().map(UUID::fromString).collect(Collectors.toSet());
-    }
-
-    private void loadEnabledPlayersConfig() {
         enabledPlayersFile = new File(plugin.getDataFolder(), "enabled-players.yml");
         if (!enabledPlayersFile.exists()) {
-            enabledPlayersFile.getParentFile().mkdirs();
             plugin.saveResource("enabled-players.yml", false);
         }
 
         enabledPlayersConfig = YamlConfiguration.loadConfiguration(enabledPlayersFile);
+        this.enabledPlayersUUID = enabledPlayersConfig.getStringList("enabled-players").stream()
+                .map(UUID::fromString)
+                .collect(Collectors.toSet());
     }
 
     @Override

@@ -4,7 +4,9 @@ import com.google.common.collect.Multimap;
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.util.ConfigHolder;
 import me.kteq.hiddenarmor.util.ItemUtil;
-import me.kteq.hiddenarmor.util.StrUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ArmorPlaceholderHandler implements ConfigHolder {
+
     private final HiddenArmor plugin;
 
     private boolean ignoreLeatherArmor;
@@ -30,24 +33,23 @@ public class ArmorPlaceholderHandler implements ConfigHolder {
     }
 
     public ItemStack buildItemPlaceholder(ItemStack itemStack) {
-        if (itemStack.getType().equals(Material.AIR)) return itemStack;
+        if (itemStack.getType() == Material.AIR) return itemStack;
 
         Material placeholderMaterial = getPlaceholderMaterial(itemStack);
         if (placeholderMaterial == null) return itemStack;
         ItemMeta newItemMeta = buildNewItemMeta(itemStack, placeholderMaterial);
         if (newItemMeta == null) return itemStack;
 
-        List<String> lore = newItemMeta.getLore();
-        if (lore == null)
-            lore = new ArrayList<>();
-        String durability = buildDurabilityText(itemStack);
+        List<Component> lore = newItemMeta.lore();
+        if (lore == null) lore = new ArrayList<>();
+        Component durability = buildDurabilityText(itemStack);
         if (durability != null) lore.add(durability);
-        newItemMeta.setLore(lore);
+        newItemMeta.lore(lore);
 
-        String displayName = buildName(itemStack);
-        newItemMeta.setDisplayName(displayName);
+        Component displayName = buildName(itemStack);
+        newItemMeta.displayName(displayName);
 
-        itemStack.setType(placeholderMaterial);
+        itemStack = itemStack.withType(placeholderMaterial);
         itemStack.setItemMeta(newItemMeta);
 
         return itemStack;
@@ -59,24 +61,26 @@ public class ArmorPlaceholderHandler implements ConfigHolder {
 
         Map<Enchantment, Integer> enchantments = oldItemMeta.getEnchants();
         Multimap<Attribute, AttributeModifier> attributes = oldItemMeta.getAttributeModifiers();
-        int damage = ((org.bukkit.inventory.meta.Damageable) oldItemMeta).getDamage();
+        int damage = ((Damageable) oldItemMeta).getDamage();
 
         ItemMeta newItemMeta = plugin.getServer().getItemFactory().getItemMeta(material);
         if (newItemMeta == null) return null;
 
-        for (Enchantment key : enchantments.keySet()) {
-            newItemMeta.addEnchant(key, enchantments.get(key), true);
+        for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+            newItemMeta.addEnchant(entry.getKey(), entry.getValue(), true);
         }
 
         newItemMeta.setAttributeModifiers(attributes);
 
-        ((Damageable) newItemMeta).setDamage(damage);
+        if (newItemMeta instanceof Damageable damageable) {
+            damageable.setDamage(damage);
+        }
 
         return newItemMeta;
     }
 
     private Material getPlaceholderMaterial(ItemStack armor) {
-        if (!ItemUtil.isArmor(armor)) return null;
+        if (ItemUtil.isNotArmorPiece(armor)) return null;
 
         String m = armor.getType().toString();
         if (m.startsWith("NETHERITE_"))
@@ -96,27 +100,36 @@ public class ArmorPlaceholderHandler implements ConfigHolder {
         return null;
     }
 
-    private String buildDurabilityText(ItemStack itemStack) {
+    private Component buildDurabilityText(ItemStack itemStack) {
         int percentage = ItemUtil.getDurabilityPercentage(itemStack);
         if (percentage != -1) {
-            String color = "&e";
-            if (percentage >= 70) color = "&a";
-            if (percentage < 30) color = "&c";
-            return StrUtil.color("&fDurability: " + color + percentage + "%");
+            NamedTextColor color = NamedTextColor.YELLOW;
+            if (percentage >= 70) color = NamedTextColor.GREEN;
+            if (percentage < 30) color = NamedTextColor.RED;
+            
+            return Component.text("Durability: ", NamedTextColor.WHITE)
+                    .decoration(TextDecoration.ITALIC, false)
+                    .append(Component.text(percentage + "%", color));
         }
         return null;
     }
 
-    private String buildName(ItemStack itemStack) {
-        String name = itemStack.getType().toString();
-        name = name.replace("_", " ").toUpperCase();
-
+    private Component buildName(ItemStack itemStack) {
+        String typeName = itemStack.getType().toString().replace("_", " ").toUpperCase();
         ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta != null && itemMeta.hasDisplayName())
-            name = itemStack.getItemMeta().getDisplayName() + StrUtil.color(" &r&8(") + name + ")";
-        else
-            name = StrUtil.color("&r") + name;
-        return name;
+        
+        Component baseName = Component.text(typeName).color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false);
+        
+        if (itemMeta != null && itemMeta.hasDisplayName()) {
+            Component customName = itemMeta.displayName();
+            if (customName == null) customName = Component.empty();
+            return customName.append(Component.space())
+                    .append(Component.text("(", NamedTextColor.GRAY))
+                    .append(baseName)
+                    .append(Component.text(")", NamedTextColor.GRAY));
+        }
+        
+        return baseName;
     }
 
     @Override
