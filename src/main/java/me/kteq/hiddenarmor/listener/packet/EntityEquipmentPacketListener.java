@@ -14,7 +14,6 @@ import me.kteq.hiddenarmor.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -43,11 +42,11 @@ public class EntityEquipmentPacketListener extends PacketListenerAbstract implem
         WrapperPlayServerEntityEquipment wrapper = new WrapperPlayServerEntityEquipment(event);
         int entityId = wrapper.getEntityId();
 
-        Entity entity = receiver.getWorld().getEntities().stream()
+        Player packetPlayer = Bukkit.getOnlinePlayers().stream()
                 .filter(e -> e.getEntityId() == entityId)
                 .findFirst().orElse(null);
 
-        if (!(entity instanceof Player packetPlayer)) return;
+        if (packetPlayer == null) return;
 
         if (hiddenArmorManager.isArmorVisible(packetPlayer)) return;
 
