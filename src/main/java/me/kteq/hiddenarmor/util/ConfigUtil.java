@@ -23,7 +23,7 @@ public class ConfigUtil {
 
     public static FileConfiguration getYamlConfiguration(File customConfigFile) {
         if (!customConfigFile.exists()) {
-                return null;
+            return null;
         }
 
         return YamlConfiguration.loadConfiguration(customConfigFile);

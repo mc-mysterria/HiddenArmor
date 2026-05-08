@@ -6,7 +6,9 @@ import org.bukkit.command.*;
 
 
 public abstract class AbstractCommand implements CommandExecutor {
+
     protected final HiddenArmor plugin;
+
     private PluginCommand pluginCommand;
 
     private String permission = null;
@@ -62,7 +64,7 @@ public abstract class AbstractCommand implements CommandExecutor {
         return sender.hasPermission(getPermission()) || sender.isOp();
     }
 
-    protected boolean hasSubPermission(CommandSender sender, String subPermission){
+    protected boolean hasSubPermission(CommandSender sender, String subPermission) {
         return sender.isOp() || sender.hasPermission(permission + "." + subPermission);
     }
 
@@ -70,22 +72,22 @@ public abstract class AbstractCommand implements CommandExecutor {
         return playerOnly;
     }
 
-    public boolean isPermissionRequired() {
-        return this.permissionRequired;
-    }
-
-    public String getPermission() {
-        return this.permission;
-    }
-
     public AbstractCommand setPlayerOnly(boolean playerOnly) {
         this.playerOnly = playerOnly;
         return this;
     }
 
+    public boolean isPermissionRequired() {
+        return this.permissionRequired;
+    }
+
     public AbstractCommand setPermissionRequired(boolean permissionRequired) {
         this.permissionRequired = permissionRequired;
         return this;
+    }
+
+    public String getPermission() {
+        return this.permission;
     }
 
     public AbstractCommand setPermission(String permission) {

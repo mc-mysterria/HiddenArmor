@@ -1,56 +1,44 @@
 package me.kteq.hiddenarmor.listener.packet;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.handler.ArmorPlaceholderHandler;
 import me.kteq.hiddenarmor.manager.PlayerManager;
-
-import me.kteq.hiddenarmor.util.protocol.PacketFields;
-import me.kteq.hiddenarmor.util.protocol.PacketIndexMapper;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public class SetSlotPacketListener extends PacketAdapter {
+public class SetSlotPacketListener extends PacketListenerAbstract {
     private final PlayerManager playerManager;
     private final ArmorPlaceholderHandler placeholderHandler;
 
-    private final int WINDOW_ID_INDEX;
-    private final int SLOT_NUMBER_INDEX;
-    private final int ITEM_INDEX;
-
-
-    public SetSlotPacketListener(HiddenArmor plugin, PacketIndexMapper indexMapper) {
-        super(plugin, PacketType.Play.Server.SET_SLOT);
+    public SetSlotPacketListener(HiddenArmor plugin) {
         this.playerManager = plugin.getPlayerManager();
         this.placeholderHandler = plugin.getArmorPlaceholderHandler();
-
-        this.WINDOW_ID_INDEX = indexMapper.get(PacketFields.SET_SLOT_$WINDOW_ID);
-        this.SLOT_NUMBER_INDEX = indexMapper.get(PacketFields.SET_SLOT_$SLOT_NUMBER);
-        this.ITEM_INDEX = indexMapper.get(PacketFields.SET_SLOT_$ITEM);
     }
-
 
     @Override
-    public void onPacketSending(PacketEvent event) {
-        Player player = event.getPlayer();
-        if (playerManager.isArmorVisible(player)) return;
+    public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.SET_SLOT) return;
 
-        PacketContainer packet = event.getPacket();
-        if (!packet.getIntegers().read(WINDOW_ID_INDEX).equals(0)) return;
+        Player player = Bukkit.getPlayer(event.getUser().getUUID());
+        if (player == null || playerManager.isArmorVisible(player)) return;
 
-        int slotNumber = packet.getIntegers().read(SLOT_NUMBER_INDEX);
-        if (slotNumber < 5 || slotNumber > 8) return;
+        WrapperPlayServerSetSlot wrapper = new WrapperPlayServerSetSlot(event);
+        if (wrapper.getWindowId() != 0) return;
 
+        int slot = wrapper.getSlot();
+        if (slot < 5 || slot > 8) return;
 
-        ItemStack itemStack = packet.getItemModifier().read(ITEM_INDEX);
-        if (itemStack != null) {
-            ItemStack placeholder = placeholderHandler.buildItemPlaceholder(itemStack);
-            packet.getItemModifier().write(0, placeholder);
+        com.github.retrooper.packetevents.protocol.item.ItemStack peItem = wrapper.getItem();
+        if (peItem != null && !peItem.isEmpty()) {
+            ItemStack bukkitItem = SpigotConversionUtil.toBukkitItemStack(peItem);
+            ItemStack placeholder = placeholderHandler.buildItemPlaceholder(bukkitItem);
+            wrapper.setItem(SpigotConversionUtil.fromBukkitItemStack(placeholder));
         }
     }
-
 }

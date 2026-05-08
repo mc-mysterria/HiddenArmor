@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class StrUtil {
-    public static String color(String s){
+    public static String color(String s) {
         return ChatColor.translateAlternateColorCodes('&', s);
     }
 
-    public static List<String> color(List<String> stringList){
+    public static List<String> color(List<String> stringList) {
         List<String> coloredStringList = new ArrayList<>();
-        for(String s : stringList){
+        for (String s : stringList) {
             coloredStringList.add(color(s));
         }
         return coloredStringList;

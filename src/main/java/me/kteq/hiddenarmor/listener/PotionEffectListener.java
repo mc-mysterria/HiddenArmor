@@ -25,10 +25,9 @@ public class PotionEffectListener implements Listener {
 
     @EventHandler
     public void onPlayerInvisibleEffect(EntityPotionEffectEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
-        Player player = (Player) event.getEntity();
+        if (!(event.getEntity() instanceof Player player)) return;
 
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run() {
                 armorUpdater.updatePlayer(player);

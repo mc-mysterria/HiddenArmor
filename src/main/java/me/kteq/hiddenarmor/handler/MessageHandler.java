@@ -92,8 +92,7 @@ public class MessageHandler implements ConfigHolder {
             message = this.prefix + message;
         }
 
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
             player.spigot().sendMessage(messageType, new TextComponent(StrUtil.color(message)));
         } else if (sender instanceof ConsoleCommandSender && messageType.equals(ChatMessageType.CHAT)) {
             sender.sendMessage(StrUtil.color(message));
@@ -115,8 +114,7 @@ public class MessageHandler implements ConfigHolder {
 
     private String getLocalizedMessage(CommandSender sender, String messageKey) {
         String locale;
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
             locale = player.getLocale();
         } else {
             locale = defaultLocale;

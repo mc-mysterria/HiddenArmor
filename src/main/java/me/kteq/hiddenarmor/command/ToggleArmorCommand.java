@@ -36,11 +36,12 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
         MessageHandler messageHandler = plugin.getMessageHandler();
         if (!hasSubPermission(sender, "toggle") && !defaultPermissionToggle) return CommandStatus.NO_PERMISSION;
         if (arguments.length == 1) {
-            if(!hasSubPermission(sender, "toggle.other") && !defaultPermissionToggleOther) return CommandStatus.NO_PERMISSION;
+            if (!hasSubPermission(sender, "toggle.other") && !defaultPermissionToggleOther)
+                return CommandStatus.NO_PERMISSION;
             String playerName = arguments[0];
             player = Bukkit.getPlayer(playerName);
 
-            if(player == null){
+            if (player == null) {
                 messageHandler.message(sender, "%player-not-found%");
                 return CommandStatus.SUCCESS;
             }
@@ -56,7 +57,7 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
 
         hiddenArmorManager.togglePlayer(player, true);
 
-        if(!player.equals(sender)) {
+        if (!player.equals(sender)) {
             Map<String, String> placeholderMap = new HashMap<>();
             placeholderMap.put("visibility", hiddenArmorManager.isEnabled(player) ? "%visibility-hidden%" : "%visibility-shown%");
             placeholderMap.put("player", player.getName());
@@ -68,7 +69,7 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
     public void sendUsage(CommandSender sender) {
         MessageHandler messageHandler = plugin.getMessageHandler();
         Map<String, String> placeholderMap = new HashMap<>();
-        if(sender instanceof Player) {
+        if (sender instanceof Player) {
             String usage = "/togglearmor" + (hasSubPermission(sender, "other") ? " [%player%]" : "");
             placeholderMap.put("usage", usage);
         } else {

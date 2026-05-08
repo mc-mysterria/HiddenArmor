@@ -15,7 +15,7 @@ public class EntityToggleGlideListener implements Listener {
     PlayerManager playerManager;
     ArmorUpdateHandler armorUpdater;
 
-    public EntityToggleGlideListener(HiddenArmor plugin){
+    public EntityToggleGlideListener(HiddenArmor plugin) {
         EventUtil.register(this, plugin);
 
         this.plugin = plugin;
@@ -24,13 +24,12 @@ public class EntityToggleGlideListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerToggleGlide(EntityToggleGlideEvent e){
-        if(!(e.getEntity() instanceof Player)) return;
+    public void onPlayerToggleGlide(EntityToggleGlideEvent e) {
+        if (!(e.getEntity() instanceof Player player)) return;
 
-        Player player = (Player) e.getEntity();
-        if(playerManager.isArmorVisible(player)) return;
+        if (playerManager.isArmorVisible(player)) return;
 
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run() {
                 armorUpdater.updatePlayer(player);

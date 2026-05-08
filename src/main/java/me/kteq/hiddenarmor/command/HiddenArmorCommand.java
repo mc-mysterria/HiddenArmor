@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder {
+
     PlayerManager hiddenArmorManager;
 
     private boolean defaultPermissionToggle;
@@ -31,7 +32,7 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
 
     @Override
     public CommandStatus execute(CommandSender sender, Command command, String[] arguments) throws Exception {
-        if((arguments.length < 1) || (arguments[0].equalsIgnoreCase("help"))) {
+        if ((arguments.length < 1) || (arguments[0].equalsIgnoreCase("help"))) {
             help(sender);
             return CommandStatus.SUCCESS;
         }
@@ -102,26 +103,26 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
         return true;
     }
 
-    private void help(CommandSender sender){
+    private void help(CommandSender sender) {
         MessageHandler messageHandler = plugin.getMessageHandler();
-        messageHandler.message(sender,"&6----------[ &fHiddenArmor &6]-----------------");
+        messageHandler.message(sender, "&6----------[ &fHiddenArmor &6]-----------------");
 
         // hiddenarmor <toggle/hide/show>
-        if(PermissionUtil.canUse(sender ,"hiddenarmor.toggle") || defaultPermissionToggle)
+        if (PermissionUtil.canUse(sender, "hiddenarmor.toggle") || defaultPermissionToggle)
             messageHandler.message(sender, "&e/hiddenarmor <toggle/hide/show> &6- %help-togglearmor%");
 
         // hiddenarmor <toggle/hide/show> <player>
-        if(PermissionUtil.canUse(sender ,"hiddenarmor.toggle.other") || (defaultPermissionToggle && defaultPermissionToggleOther))
+        if (PermissionUtil.canUse(sender, "hiddenarmor.toggle.other") || (defaultPermissionToggle && defaultPermissionToggleOther))
             messageHandler.message(sender, "&e/hiddenarmor <toggle/hide/show> [%player%] &6- %help-togglearmor-other%");
 
         // hiddenarmor reload
-        if(PermissionUtil.canUse(sender, "hiddenarmor.reload"))
+        if (PermissionUtil.canUse(sender, "hiddenarmor.reload"))
             messageHandler.message(sender, "&e/hiddenarmor reload &6- %help-reload%");
 
         // help
         messageHandler.message(sender, "&e/hiddenarmor help &6- %help-help%");
 
-        messageHandler.message(sender,"&6----------------------------------------");
+        messageHandler.message(sender, "&6----------------------------------------");
     }
 
     @Override

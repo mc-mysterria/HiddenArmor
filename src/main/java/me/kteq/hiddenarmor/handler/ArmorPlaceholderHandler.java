@@ -5,7 +5,6 @@ import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.util.ConfigHolder;
 import me.kteq.hiddenarmor.util.ItemUtil;
 import me.kteq.hiddenarmor.util.StrUtil;
-import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -65,7 +64,7 @@ public class ArmorPlaceholderHandler implements ConfigHolder {
         ItemMeta newItemMeta = plugin.getServer().getItemFactory().getItemMeta(material);
         if (newItemMeta == null) return null;
 
-        for(Enchantment key : enchantments.keySet()) {
+        for (Enchantment key : enchantments.keySet()) {
             newItemMeta.addEnchant(key, enchantments.get(key), true);
         }
 
@@ -77,44 +76,43 @@ public class ArmorPlaceholderHandler implements ConfigHolder {
     }
 
     private Material getPlaceholderMaterial(ItemStack armor) {
-        if(!ItemUtil.isArmor(armor)) return null;
+        if (!ItemUtil.isArmor(armor)) return null;
 
         String m = armor.getType().toString();
-        if(m.startsWith("NETHERITE_"))
+        if (m.startsWith("NETHERITE_"))
             return Material.POLISHED_BLACKSTONE_BUTTON;
-        if(m.startsWith("DIAMOND_"))
+        if (m.startsWith("DIAMOND_"))
             return Material.WARPED_BUTTON;
-        if(m.startsWith("GOLDEN_"))
+        if (m.startsWith("GOLDEN_"))
             return Material.BIRCH_BUTTON;
-        if(m.startsWith("IRON_"))
+        if (m.startsWith("IRON_"))
             return Material.STONE_BUTTON;
-        if(m.startsWith("LEATHER_") && !ignoreLeatherArmor)
+        if (m.startsWith("LEATHER_") && !ignoreLeatherArmor)
             return Material.ACACIA_BUTTON;
-        if(m.startsWith("CHAINMAIL_"))
+        if (m.startsWith("CHAINMAIL_"))
             return Material.JUNGLE_BUTTON;
-        if(m.startsWith("TURTLE_") && !ignoreTurtleHelmet)
+        if (m.startsWith("TURTLE_") && !ignoreTurtleHelmet)
             return Material.CRIMSON_BUTTON;
         return null;
     }
 
-    private String buildDurabilityText(ItemStack itemStack){
+    private String buildDurabilityText(ItemStack itemStack) {
         int percentage = ItemUtil.getDurabilityPercentage(itemStack);
-        if(percentage != -1){
+        if (percentage != -1) {
             String color = "&e";
-            if(percentage>=70) color = "&a";
-            if(percentage<30) color = "&c";
-            return StrUtil.color("&fDurability: "+ color + percentage +"%");
+            if (percentage >= 70) color = "&a";
+            if (percentage < 30) color = "&c";
+            return StrUtil.color("&fDurability: " + color + percentage + "%");
         }
         return null;
     }
 
-    private String buildName(ItemStack itemStack){
+    private String buildName(ItemStack itemStack) {
         String name = itemStack.getType().toString();
-        name = name.replaceAll("_", " ");
-        name = WordUtils.capitalizeFully(name);
+        name = name.replace("_", " ").toUpperCase();
 
         ItemMeta itemMeta = itemStack.getItemMeta();
-        if(itemMeta != null && itemMeta.hasDisplayName())
+        if (itemMeta != null && itemMeta.hasDisplayName())
             name = itemStack.getItemMeta().getDisplayName() + StrUtil.color(" &r&8(") + name + ")";
         else
             name = StrUtil.color("&r") + name;

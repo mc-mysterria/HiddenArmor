@@ -22,16 +22,12 @@ public class PlayerManager implements ConfigHolder {
     private final HiddenArmor plugin;
     private final ArmorUpdateHandler armorUpdater;
     private final MessageHandler messageHandler;
-
-
-    private File enabledPlayersFile = null;
-    private FileConfiguration enabledPlayersConfig;
-
-    private boolean invisibleAlwaysHideGear;
-
-    private Set<UUID> enabledPlayersUUID = new HashSet<>();
     private final Set<Predicate<Player>> forceDisablePredicates = new HashSet<>();
     private final Set<Predicate<Player>> forceEnablePredicates = new HashSet<>();
+    private File enabledPlayersFile = null;
+    private FileConfiguration enabledPlayersConfig;
+    private boolean invisibleAlwaysHideGear;
+    private Set<UUID> enabledPlayersUUID = new HashSet<>();
 
 
     public PlayerManager(HiddenArmor plugin) {

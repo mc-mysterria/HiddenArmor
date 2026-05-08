@@ -19,7 +19,7 @@ public class InventoryShiftClickListener implements Listener {
     private final PlayerManager hiddenArmorManager;
     private final ArmorUpdateHandler armorUpdater;
 
-    public InventoryShiftClickListener(HiddenArmor plugin){
+    public InventoryShiftClickListener(HiddenArmor plugin) {
         EventUtil.register(this, plugin);
 
         this.plugin = plugin;
@@ -28,18 +28,18 @@ public class InventoryShiftClickListener implements Listener {
     }
 
     @EventHandler
-    public void onShiftClickArmor(InventoryClickEvent event){
-        if(hiddenArmorManager.isArmorVisible((Player) event.getWhoClicked())) return;
-        if(!(event.getClickedInventory() instanceof PlayerInventory)) return;
-        if(!event.isShiftClick()) return;
+    public void onShiftClickArmor(InventoryClickEvent event) {
+        if (hiddenArmorManager.isArmorVisible((Player) event.getWhoClicked())) return;
+        if (!(event.getClickedInventory() instanceof PlayerInventory)) return;
+        if (!event.isShiftClick()) return;
 
         Player player = (Player) event.getWhoClicked();
         PlayerInventory inv = player.getInventory();
         ItemStack armor = event.getCurrentItem();
 
-        if(armor == null) return;
+        if (armor == null) return;
 
-        if((armor.getType().toString().endsWith("_HELMET") && ItemUtil.isEmpty(inv.getHelmet())) ||
+        if ((armor.getType().toString().endsWith("_HELMET") && ItemUtil.isEmpty(inv.getHelmet())) ||
                 ((armor.getType().toString().endsWith("_CHESTPLATE") || armor.getType().equals(Material.ELYTRA)) && ItemUtil.isEmpty(inv.getChestplate())) ||
                 (armor.getType().toString().endsWith("_LEGGINGS") && ItemUtil.isEmpty(inv.getLeggings())) ||
                 (armor.getType().toString().endsWith("_BOOTS") && ItemUtil.isEmpty(inv.getBoots()))) {

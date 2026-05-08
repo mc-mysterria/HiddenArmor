@@ -21,16 +21,16 @@ public class HiddenArmorTabCompleter implements TabCompleter, ConfigHolder {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!command.getName().equals("hiddenarmor")) return null;
-        if(args.length > 1) return null;
+        if (args.length > 1) return null;
         List<String> options = new ArrayList<>();
 
 
-        if(PermissionUtil.canUse(sender ,"hiddenarmor.toggle") || defaultPermissionToggle) {
+        if (PermissionUtil.canUse(sender, "hiddenarmor.toggle") || defaultPermissionToggle) {
             options.add("toggle");
             options.add("hide");
             options.add("show");
         }
-        if(PermissionUtil.canUse(sender, "hiddenarmor.reload")) {
+        if (PermissionUtil.canUse(sender, "hiddenarmor.reload")) {
             options.add("reload");
         }
         options.add("help");
