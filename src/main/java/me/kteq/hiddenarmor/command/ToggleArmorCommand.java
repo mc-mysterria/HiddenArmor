@@ -33,9 +33,9 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
 
         Player player;
         MessageHandler messageHandler = plugin.getMessageHandler();
-        if (!hasSubPermission(sender, "toggle") && !defaultPermissionToggle) return Status.NO_PERMISSION;
+        if (!(sender.isOp() || sender.hasPermission(getPermission())) && !defaultPermissionToggle) return Status.NO_PERMISSION;
         if (arguments.length == 1) {
-            if (!hasSubPermission(sender, "toggle.other") && !defaultPermissionToggleOther)
+            if (!hasSubPermission(sender, "other") && !defaultPermissionToggleOther)
                 return Status.NO_PERMISSION;
             String playerName = arguments[0];
             player = Bukkit.getPlayer(playerName);
