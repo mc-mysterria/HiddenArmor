@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class PotionEffectListener implements Listener {
@@ -25,6 +26,10 @@ public class PotionEffectListener implements Listener {
     @EventHandler
     public void onPlayerInvisibleEffect(EntityPotionEffectEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
+
+        PotionEffectType newType = event.getNewEffect() != null ? event.getNewEffect().getType() : null;
+        PotionEffectType oldType = event.getOldEffect() != null ? event.getOldEffect().getType() : null;
+        if (!PotionEffectType.INVISIBILITY.equals(newType) && !PotionEffectType.INVISIBILITY.equals(oldType)) return;
 
         new BukkitRunnable() {
             @Override

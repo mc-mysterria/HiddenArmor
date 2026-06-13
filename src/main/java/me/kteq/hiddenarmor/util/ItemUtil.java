@@ -35,7 +35,7 @@ public final class ItemUtil {
             case LEGS -> inv.getLeggings();
             case BOOTS -> inv.getBoots();
         };
-        return item.clone();
+        return item != null ? item.clone() : new ItemStack(Material.AIR);
     }
 
     public enum ArmorSlot {

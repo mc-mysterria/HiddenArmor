@@ -54,10 +54,11 @@ public class ArmorUpdateHandler {
     }
 
     private void broadcastPlayerPacket(PacketWrapper<?> packet, Player player) {
+        var playerLoc = player.getLocation();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!p.getWorld().equals(player.getWorld())) continue;
-            if (p.getLocation().distanceSquared(player.getLocation()) > 16384) continue; // 128 blocks squared
             if (p.equals(player)) continue;
+            if (!p.getWorld().equals(playerLoc.getWorld())) continue;
+            if (p.getLocation().distanceSquared(playerLoc) > 16384) continue; // 128 blocks squared
             PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet);
         }
     }
