@@ -16,13 +16,19 @@ public class CombatRevealListener implements Listener {
         this.playerManager = plugin.getPlayerManager();
     }
 
-    // Players must be able to read an opponent's armour tier in PvP.
+    // Players must be able to read an opponent's armour tier in PvP; mobs never trigger this.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPvp(EntityDamageByEntityEvent event) {
-        if (!(event.getEntity() instanceof Player victim)) return;
-        if (!(event.getDamageSource().getCausingEntity() instanceof Player attacker) || attacker.equals(victim)) return;
+        if (!(event.getEntity() instanceof Player victim) || isNpc(victim)) return;
+
+        // causing entity also resolves TNT, lingering potion clouds and other indirect sources to the player behind them
+        if (!(event.getDamageSource().getCausingEntity() instanceof Player attacker) || isNpc(attacker) || attacker.equals(victim)) return;
 
         playerManager.markCombat(victim);
         playerManager.markCombat(attacker);
+    }
+
+    private boolean isNpc(Player player) {
+        return player.hasMetadata("NPC");
     }
 }

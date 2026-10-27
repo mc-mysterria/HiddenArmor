@@ -57,7 +57,8 @@ public class PlayerManager implements ConfigHolder {
     public void enablePlayer(Player player, boolean inform) {
         if (!enabledPlayersUUID.add(player.getUniqueId())) return;
         if (inform) {
-            messageHandler.sendActionBar(player, "%armor-visibility%", Map.of("visibility", "%visibility-hidden%"));
+            String message = isInCombat(player) ? "%armor-hidden-after-combat%" : "%armor-visibility%";
+            messageHandler.sendActionBar(player, message, Map.of("visibility", "%visibility-hidden%"));
         }
         dirty = true;
         armorUpdater.updatePlayer(player);
@@ -79,8 +80,12 @@ public class PlayerManager implements ConfigHolder {
     public boolean isArmorVisible(Player player) {
         if (player.getGameMode() == GameMode.CREATIVE) return true;
         if (player.isInvisible()) return !invisibleAlwaysHideGear;
-        if (combatUntil.containsKey(player.getUniqueId())) return true;
+        if (isInCombat(player)) return true;
         return !isEnabled(player);
+    }
+
+    public boolean isInCombat(Player player) {
+        return combatUntil.getOrDefault(player.getUniqueId(), 0L) > System.currentTimeMillis();
     }
 
     public Player getByEntityId(int entityId) {
@@ -97,7 +102,8 @@ public class PlayerManager implements ConfigHolder {
     }
 
     public void markCombat(Player player) {
-        if (combatRevealMillis <= 0 || !isEnabled(player)) return;
+        // tracked for everyone, so hiding armour mid-fight waits until the fight ends
+        if (combatRevealMillis <= 0) return;
         boolean wasHidden = !isArmorVisible(player);
         combatUntil.put(player.getUniqueId(), System.currentTimeMillis() + combatRevealMillis);
         if (wasHidden) {
@@ -111,8 +117,7 @@ public class PlayerManager implements ConfigHolder {
         combatUntil.entrySet().removeIf(entry -> {
             if (entry.getValue() > now) return false;
             Player player = Bukkit.getPlayer(entry.getKey());
-            // deferred so the update sees the entry already removed
-            if (player != null) Bukkit.getScheduler().runTask(plugin, () -> armorUpdater.updatePlayer(player));
+            if (player != null && isEnabled(player)) armorUpdater.updatePlayer(player);
             return true;
         });
         if (dirty) saveCurrentEnabledPlayers();
