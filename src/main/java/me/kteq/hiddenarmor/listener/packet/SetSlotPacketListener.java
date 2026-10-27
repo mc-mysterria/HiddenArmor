@@ -8,7 +8,6 @@ import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.handler.ArmorPlaceholderHandler;
 import me.kteq.hiddenarmor.manager.PlayerManager;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -27,7 +26,7 @@ public class SetSlotPacketListener extends PacketListenerAbstract {
     public void onPacketSend(PacketSendEvent event) {
         if (event.getPacketType() != PacketType.Play.Server.SET_SLOT) return;
 
-        Player player = Bukkit.getPlayer(event.getUser().getUUID());
+        Player player = event.getPlayer();
         if (player == null || playerManager.isArmorVisible(player)) return;
 
         WrapperPlayServerSetSlot wrapper = new WrapperPlayServerSetSlot(event);
@@ -39,7 +38,7 @@ public class SetSlotPacketListener extends PacketListenerAbstract {
         com.github.retrooper.packetevents.protocol.item.ItemStack peItem = wrapper.getItem();
         if (peItem != null && !peItem.isEmpty()) {
             ItemStack bukkitItem = SpigotConversionUtil.toBukkitItemStack(peItem);
-            ItemStack placeholder = placeholderHandler.buildItemPlaceholder(bukkitItem);
+            ItemStack placeholder = placeholderHandler.buildItemPlaceholder(bukkitItem, player);
             wrapper.setItem(SpigotConversionUtil.fromBukkitItemStack(placeholder));
         }
     }

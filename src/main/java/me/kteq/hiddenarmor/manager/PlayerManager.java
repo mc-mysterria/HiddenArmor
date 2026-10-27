@@ -4,7 +4,7 @@ import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.handler.ArmorUpdateHandler;
 import me.kteq.hiddenarmor.handler.MessageHandler;
 import me.kteq.hiddenarmor.util.ConfigHolder;
-import net.md_5.bungee.api.ChatMessageType;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -23,22 +23,27 @@ public class PlayerManager implements ConfigHolder {
 
     private final ArmorUpdateHandler armorUpdater;
     private final MessageHandler messageHandler;
-    
-    private final Set<Predicate<Player>> forceDisablePredicates = new HashSet<>();
-    private final Set<Predicate<Player>> forceEnablePredicates = new HashSet<>();
-    
+
+    // read from netty threads by the packet listeners
+    private final Set<UUID> enabledPlayersUUID = ConcurrentHashMap.newKeySet();
+    private final Map<Integer, Player> playersByEntityId = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> combatUntil = new ConcurrentHashMap<>();
+
     private File enabledPlayersFile;
     private FileConfiguration enabledPlayersConfig;
+    private boolean dirty;
+
     private boolean invisibleAlwaysHideGear;
-    private Set<UUID> enabledPlayersUUID = new HashSet<>();
+    private long combatRevealMillis;
 
     public PlayerManager(HiddenArmor plugin) {
         this.plugin = plugin;
         plugin.addConfigHolder(this);
         this.armorUpdater = plugin.getArmorUpdater();
         this.messageHandler = plugin.getMessageHandler();
-        registerDefaultPredicates();
         loadEnabledPlayers();
+        Bukkit.getOnlinePlayers().forEach(this::track);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
 
     public void togglePlayer(Player player, boolean inform) {
@@ -50,66 +55,72 @@ public class PlayerManager implements ConfigHolder {
     }
 
     public void enablePlayer(Player player, boolean inform) {
-        if (isEnabled(player)) return;
+        if (!enabledPlayersUUID.add(player.getUniqueId())) return;
         if (inform) {
-            Map<String, String> placeholders = Map.of("visibility", "%visibility-hidden%");
-            messageHandler.sendActionBar(player, "%armor-visibility%", placeholders);
+            messageHandler.sendActionBar(player, "%armor-visibility%", Map.of("visibility", "%visibility-hidden%"));
         }
-
-        this.enabledPlayersUUID.add(player.getUniqueId());
+        dirty = true;
         armorUpdater.updatePlayer(player);
     }
 
     public void disablePlayer(Player player, boolean inform) {
-        if (!isEnabled(player)) return;
+        if (!enabledPlayersUUID.remove(player.getUniqueId())) return;
         if (inform) {
-            Map<String, String> placeholders = Map.of("visibility", "%visibility-shown%");
-            messageHandler.sendActionBar(player, "%armor-visibility%", placeholders);
+            messageHandler.sendActionBar(player, "%armor-visibility%", Map.of("visibility", "%visibility-shown%"));
         }
-
-        enabledPlayersUUID.remove(player.getUniqueId());
+        dirty = true;
         armorUpdater.updatePlayer(player);
     }
 
     public boolean isEnabled(Player player) {
-        return this.enabledPlayersUUID.contains(player.getUniqueId());
+        return enabledPlayersUUID.contains(player.getUniqueId());
     }
 
     public boolean isArmorVisible(Player player) {
-        boolean hidden = isEnabled(player);
-        
-        for (var predicate : forceDisablePredicates) {
-            if (predicate.test(player)) {
-                hidden = false;
-                break;
-            }
-        }
-        
-        if (!hidden) {
-            for (var predicate : forceEnablePredicates) {
-                if (predicate.test(player)) {
-                    hidden = true;
-                    break;
-                }
-            }
-        }
-        
-        return !hidden;
+        if (player.getGameMode() == GameMode.CREATIVE) return true;
+        if (player.isInvisible()) return !invisibleAlwaysHideGear;
+        if (combatUntil.containsKey(player.getUniqueId())) return true;
+        return !isEnabled(player);
     }
 
-    private void registerDefaultPredicates() {
-        forceDisablePredicates.add(player -> player.getGameMode() == GameMode.CREATIVE);
-        forceDisablePredicates.add(player -> player.isInvisible() && !invisibleAlwaysHideGear);
+    public Player getByEntityId(int entityId) {
+        return playersByEntityId.get(entityId);
+    }
 
-        forceEnablePredicates.add(player -> player.isInvisible() && invisibleAlwaysHideGear);
+    public void track(Player player) {
+        playersByEntityId.put(player.getEntityId(), player);
+    }
+
+    public void untrack(Player player) {
+        playersByEntityId.remove(player.getEntityId());
+        combatUntil.remove(player.getUniqueId());
+    }
+
+    public void markCombat(Player player) {
+        if (combatRevealMillis <= 0 || !isEnabled(player)) return;
+        boolean wasHidden = !isArmorVisible(player);
+        combatUntil.put(player.getUniqueId(), System.currentTimeMillis() + combatRevealMillis);
+        if (wasHidden) {
+            messageHandler.sendActionBar(player, "%armor-revealed-combat%", Map.of());
+            armorUpdater.updatePlayer(player);
+        }
+    }
+
+    private void tick() {
+        long now = System.currentTimeMillis();
+        combatUntil.entrySet().removeIf(entry -> {
+            if (entry.getValue() > now) return false;
+            Player player = Bukkit.getPlayer(entry.getKey());
+            // deferred so the update sees the entry already removed
+            if (player != null) Bukkit.getScheduler().runTask(plugin, () -> armorUpdater.updatePlayer(player));
+            return true;
+        });
+        if (dirty) saveCurrentEnabledPlayers();
     }
 
     public void saveCurrentEnabledPlayers() {
-        List<String> enabledUUIDs = this.enabledPlayersUUID.stream()
-                .map(UUID::toString)
-                .toList();
-
-        enabledPlayersConfig.set("enabled-players", enabledUUIDs);
+        dirty = false;
+        enabledPlayersConfig.set("enabled-players", enabledPlayersUUID.stream().map(UUID::toString).toList());
         try {
             enabledPlayersConfig.save(enabledPlayersFile);
         } catch (IOException e) {
@@ -124,13 +135,14 @@ public class PlayerManager implements ConfigHolder {
         }
 
         enabledPlayersConfig = YamlConfiguration.loadConfiguration(enabledPlayersFile);
-        this.enabledPlayersUUID = enabledPlayersConfig.getStringList("enabled-players").stream()
+        enabledPlayersUUID.addAll(enabledPlayersConfig.getStringList("enabled-players").stream()
                 .map(UUID::fromString)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet()));
     }
 
     @Override
     public void loadConfig(FileConfiguration config) {
         this.invisibleAlwaysHideGear = config.getBoolean("invisibility-potion.always-hide-gear");
+        this.combatRevealMillis = config.getLong("combat-reveal-seconds", 10) * 1000L;
     }
 }

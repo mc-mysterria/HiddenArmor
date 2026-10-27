@@ -12,6 +12,7 @@ import org.bukkit.plugin.Plugin;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class MessageHandler implements ConfigHolder {
     private String prefix = "";
 
     private Map<String, FileConfiguration> localeMap;
+    private FileConfiguration defaultResourceLocale;
 
     public MessageHandler(HiddenArmor plugin, String prefix) {
         this.plugin = plugin;
@@ -45,6 +47,7 @@ public class MessageHandler implements ConfigHolder {
             }
         }
 
+        defaultResourceLocale = loadDefaultResourceLocale();
         localeMap = new HashMap<>();
         File localeFolder = new File(plugin.getDataFolder().getAbsolutePath() + "/locale");
         File[] files = localeFolder.listFiles();
@@ -52,7 +55,7 @@ public class MessageHandler implements ConfigHolder {
             for (File file : files) {
                 FileConfiguration localeYaml = getYamlConfiguration(file);
                 if (localeYaml != null) {
-                    localeMap.put(file.getName().replaceAll(".yml", ""), localeYaml);
+                    localeMap.put(file.getName().replace(".yml", ""), localeYaml);
                 }
             }
         }
@@ -84,7 +87,7 @@ public class MessageHandler implements ConfigHolder {
 
         for (Map.Entry<String, String> entry : placeholderMap.entrySet()) {
             String value = replaceHoldersFromConfig(sender, entry.getValue());
-            message = message.replaceAll("%" + entry.getKey() + "%", value);
+            message = message.replace("%" + entry.getKey() + "%", value);
         }
 
         if (prefix) {
@@ -99,7 +102,7 @@ public class MessageHandler implements ConfigHolder {
 
         for (Map.Entry<String, String> entry : placeholderMap.entrySet()) {
             String value = replaceHoldersFromConfig(player, entry.getValue());
-            message = message.replaceAll("%" + entry.getKey() + "%", value);
+            message = message.replace("%" + entry.getKey() + "%", value);
         }
 
         player.sendActionBar(ColorUtil.color(message));
@@ -112,7 +115,7 @@ public class MessageHandler implements ConfigHolder {
             String localizedMessage = getLocalizedMessage(sender, string);
 
             if (localizedMessage != null) {
-                message = message.replaceAll("%" + string + "%", localizedMessage);
+                message = message.replace("%" + string + "%", localizedMessage);
             }
         }
 
@@ -120,22 +123,22 @@ public class MessageHandler implements ConfigHolder {
     }
 
     private String getLocalizedMessage(CommandSender sender, String messageKey) {
-        String locale = (sender instanceof Player player) ? player.getLocale() : defaultLocale;
+        String locale = (sender instanceof Player player) ? player.locale().toString().toLowerCase() : defaultLocale;
         FileConfiguration localeYaml = localeMap.get(locale);
         if (localeYaml == null) {
             localeYaml = localeMap.get(defaultLocale);
             if (localeYaml == null) {
-                localeYaml = getDefaultResourceLocale();
+                localeYaml = defaultResourceLocale;
             }
         }
 
-        return localeYaml.getString(messageKey, getDefaultResourceLocale().getString(messageKey));
+        return localeYaml.getString(messageKey, defaultResourceLocale.getString(messageKey));
     }
 
-    private FileConfiguration getDefaultResourceLocale() {
+    private FileConfiguration loadDefaultResourceLocale() {
         InputStream inputStream = plugin.getResource("locale/en_us.yml");
         if (inputStream == null) return new YamlConfiguration();
-        return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
+        return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
     }
 
     @Override

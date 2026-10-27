@@ -8,7 +8,6 @@ import me.kteq.hiddenarmor.util.ConfigHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
@@ -44,14 +43,12 @@ public class ToggleArmorCommand extends AbstractCommand implements ConfigHolder 
                 messageHandler.message(sender, "%player-not-found%");
                 return Status.SUCCESS;
             }
+        } else if (sender instanceof Player self) {
+            player = self;
         } else {
-            if (sender instanceof ConsoleCommandSender) {
-                messageHandler.message(sender, "%console-togglearmor-warning%");
-                sendUsage(sender);
-                return Status.SUCCESS;
-            } else {
-                player = (Player) sender;
-            }
+            messageHandler.message(sender, "%console-togglearmor-warning%");
+            sendUsage(sender);
+            return Status.SUCCESS;
         }
 
         hiddenArmorManager.togglePlayer(player, true);

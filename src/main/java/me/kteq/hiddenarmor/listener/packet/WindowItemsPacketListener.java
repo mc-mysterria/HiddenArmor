@@ -9,7 +9,6 @@ import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.handler.ArmorPlaceholderHandler;
 import me.kteq.hiddenarmor.manager.PlayerManager;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public class WindowItemsPacketListener extends PacketListenerAbstract {
     public void onPacketSend(PacketSendEvent event) {
         if (event.getPacketType() != PacketType.Play.Server.WINDOW_ITEMS) return;
 
-        Player player = Bukkit.getPlayer(event.getUser().getUUID());
+        Player player = event.getPlayer();
         if (player == null || playerManager.isArmorVisible(player)) return;
 
         WrapperPlayServerWindowItems wrapper = new WrapperPlayServerWindowItems(event);
@@ -41,7 +40,7 @@ public class WindowItemsPacketListener extends PacketListenerAbstract {
             ItemStack peItem = items.get(i);
             if (peItem != null && !peItem.isEmpty()) {
                 org.bukkit.inventory.ItemStack bukkitItem = SpigotConversionUtil.toBukkitItemStack(peItem);
-                org.bukkit.inventory.ItemStack placeholder = placeholderHandler.buildItemPlaceholder(bukkitItem);
+                org.bukkit.inventory.ItemStack placeholder = placeholderHandler.buildItemPlaceholder(bukkitItem, player);
                 items.set(i, SpigotConversionUtil.fromBukkitItemStack(placeholder));
             }
         }

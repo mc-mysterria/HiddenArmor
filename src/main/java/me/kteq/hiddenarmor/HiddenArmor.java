@@ -8,9 +8,11 @@ import me.kteq.hiddenarmor.command.ToggleArmorCommand;
 import me.kteq.hiddenarmor.handler.ArmorPlaceholderHandler;
 import me.kteq.hiddenarmor.handler.ArmorUpdateHandler;
 import me.kteq.hiddenarmor.handler.MessageHandler;
+import me.kteq.hiddenarmor.listener.CombatRevealListener;
 import me.kteq.hiddenarmor.listener.EntityToggleGlideListener;
 import me.kteq.hiddenarmor.listener.GameModeListener;
 import me.kteq.hiddenarmor.listener.InventoryShiftClickListener;
+import me.kteq.hiddenarmor.listener.PlayerSessionListener;
 import me.kteq.hiddenarmor.listener.PotionEffectListener;
 import me.kteq.hiddenarmor.listener.packet.EntityEquipmentPacketListener;
 import me.kteq.hiddenarmor.listener.packet.SetSlotPacketListener;
@@ -43,7 +45,7 @@ public final class HiddenArmor extends JavaPlugin {
         this.saveDefaultConfig();
         checkConfig();
 
-        this.messageHandler = new MessageHandler(this, "<red>[<white>HiddenArmor<red>] <white>");
+        this.messageHandler = new MessageHandler(this, "&c[&fHiddenArmor&c] &f");
         this.armorUpdater = new ArmorUpdateHandler(this);
         this.playerManager = new PlayerManager(this);
         this.armorPlaceholderHandler = new ArmorPlaceholderHandler(this);
@@ -68,6 +70,8 @@ public final class HiddenArmor extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GameModeListener(this), this);
         getServer().getPluginManager().registerEvents(new PotionEffectListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityToggleGlideListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerSessionListener(this), this);
+        getServer().getPluginManager().registerEvents(new CombatRevealListener(this), this);
     }
 
     @Override

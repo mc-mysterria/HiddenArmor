@@ -3,18 +3,14 @@ package me.kteq.hiddenarmor.handler;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
-import com.github.retrooper.packetevents.wrapper.PacketWrapper;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import me.kteq.hiddenarmor.HiddenArmor;
 import me.kteq.hiddenarmor.util.ItemUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ArmorUpdateHandler {
@@ -28,38 +24,44 @@ public class ArmorUpdateHandler {
     }
 
     public void updateSelf(Player player) {
+        sendSelf(player, false);
+    }
+
+    // Bypasses the placeholder listeners, so the client holds the real items before it gains creative authority over them.
+    public void revealSelf(Player player) {
+        sendSelf(player, true);
+    }
+
+    private void sendSelf(Player player, boolean silently) {
         PlayerInventory inv = player.getInventory();
         for (ItemUtil.ArmorSlot slot : ItemUtil.ArmorSlot.values()) {
-            ItemStack armor = ItemUtil.getArmor(slot, inv);
             WrapperPlayServerSetSlot packet = new WrapperPlayServerSetSlot(
-                    0, 0, slot.getSlotId(), SpigotConversionUtil.fromBukkitItemStack(armor)
+                    0, 0, slot.getSlotId(), SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(slot, inv))
             );
-            PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
+            if (silently) {
+                PacketEvents.getAPI().getPlayerManager().sendPacketSilently(player, packet);
+            } else {
+                PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
+            }
         }
     }
 
     public void updateToOthers(Player player) {
+        if (player.getTrackedBy().isEmpty()) return;
         PlayerInventory inv = player.getInventory();
 
-        List<Equipment> equipmentList = new ArrayList<>();
-        equipmentList.add(new Equipment(EquipmentSlot.HELMET, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.HELMET, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.CHEST_PLATE, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.CHEST, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.LEGGINGS, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.LEGS, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.BOOTS, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.BOOTS, inv))));
-        equipmentList.add(new Equipment(EquipmentSlot.MAIN_HAND, SpigotConversionUtil.fromBukkitItemStack(inv.getItemInMainHand().clone())));
-        equipmentList.add(new Equipment(EquipmentSlot.OFF_HAND, SpigotConversionUtil.fromBukkitItemStack(inv.getItemInOffHand().clone())));
+        List<Equipment> equipmentList = List.of(
+                new Equipment(EquipmentSlot.HELMET, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.HELMET, inv))),
+                new Equipment(EquipmentSlot.CHEST_PLATE, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.CHEST, inv))),
+                new Equipment(EquipmentSlot.LEGGINGS, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.LEGS, inv))),
+                new Equipment(EquipmentSlot.BOOTS, SpigotConversionUtil.fromBukkitItemStack(ItemUtil.getArmor(ItemUtil.ArmorSlot.BOOTS, inv))),
+                new Equipment(EquipmentSlot.MAIN_HAND, SpigotConversionUtil.fromBukkitItemStack(inv.getItemInMainHand())),
+                new Equipment(EquipmentSlot.OFF_HAND, SpigotConversionUtil.fromBukkitItemStack(inv.getItemInOffHand()))
+        );
 
         WrapperPlayServerEntityEquipment packet = new WrapperPlayServerEntityEquipment(player.getEntityId(), equipmentList);
-        broadcastPlayerPacket(packet, player);
-    }
-
-    private void broadcastPlayerPacket(PacketWrapper<?> packet, Player player) {
-        var playerLoc = player.getLocation();
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.equals(player)) continue;
-            if (!p.getWorld().equals(playerLoc.getWorld())) continue;
-            if (p.getLocation().distanceSquared(playerLoc) > 16384) continue; // 128 blocks squared
-            PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet);
+        for (Player viewer : player.getTrackedBy()) {
+            PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
         }
     }
 }

@@ -10,13 +10,15 @@ invisibility-potion:
 # Equipments to be ignored and not hidden section
 ignore:
   # If leather armor should not be hidden and be shown even if the player is hiding his armor.
-  # It is recommended to set this to true due to powder snow issues caused when the leather armor is hidden.
-  leather-armor: true
+  leather-armor: false
   # Set this to true if you want to let your players show off their turtle helmet even when their armor is hidden.
   turtle-helmet: false
-  # Set this to true if you want elytras to never be hidden.
-  # If this is set to false, the elytra will only be hidden to other players due to minecraft limitations.
+  # Set this to true if you want elytras to never be hidden. Hidden elytras still show while gliding.
   elytra: false
+
+# Hidden armor is shown for this many seconds after a player hits or is hit by another player,
+# so opponents can see what they are fighting. Set to 0 to disable.
+combat-reveal-seconds: 10
 
 
 # Set to true if you want the command to be allowed to all players by default or to false if you want
@@ -38,4 +40,4 @@ locale:
   default-locale: 'en-us'
 
 # Used to inform when a new config update is available, don't change this
-config-version: 2
+config-version: 3

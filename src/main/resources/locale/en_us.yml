@@ -16,4 +16,4 @@ command-delay: "&cPlease, wait before using this command again."
 command-player-only: "&cOnly players can use this command."
 command-invalid: "&cInvalid command, use '/hiddenarmor help' to list all commands available."
 command-error: "&4An error occurred while executing the command."
-
+armor-revealed-combat: "&7Armor visible while in combat"

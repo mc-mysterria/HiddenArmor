@@ -8,7 +8,6 @@ import me.kteq.hiddenarmor.util.ConfigHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
@@ -50,32 +49,29 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
             case "toggle":
             case "hide":
             case "show":
-                if (!toggleArmor(sender, arguments)) break;
-                return Status.SUCCESS;
+                return toggleArmor(sender, arguments);
         }
 
         return Status.INVALID_USAGE;
     }
 
-    private boolean toggleArmor(CommandSender sender, String[] arguments) {
-        if (!hasSubPermission(sender, "toggle") && !defaultPermissionToggle) return false;
+    private Status toggleArmor(CommandSender sender, String[] arguments) {
+        if (!hasSubPermission(sender, "toggle") && !defaultPermissionToggle) return Status.NO_PERMISSION;
         MessageHandler messageHandler = plugin.getMessageHandler();
         Player player;
-        if (arguments.length == 2 && (hasSubPermission(sender, "toggle.other") || defaultPermissionToggleOther)) {
-            String playerName = arguments[1];
-            player = Bukkit.getPlayer(playerName);
+        if (arguments.length >= 2) {
+            if (!hasSubPermission(sender, "toggle.other") && !defaultPermissionToggleOther) return Status.NO_PERMISSION;
+            player = Bukkit.getPlayer(arguments[1]);
 
             if (player == null) {
                 messageHandler.message(sender, "%player-not-found%");
-                return true;
+                return Status.SUCCESS;
             }
+        } else if (sender instanceof Player self) {
+            player = self;
         } else {
-            if (sender instanceof ConsoleCommandSender) {
-                messageHandler.message(sender, "%console-togglearmor-warning%");
-                return true;
-            } else {
-                player = (Player) sender;
-            }
+            messageHandler.message(sender, "%console-togglearmor-warning%");
+            return Status.SUCCESS;
         }
 
         String action = arguments[0].toLowerCase();
@@ -98,29 +94,29 @@ public class HiddenArmorCommand extends AbstractCommand implements ConfigHolder 
             placeholderMap.put("player", player.getName());
             messageHandler.message(sender, "%armor-visibility-other%", false, placeholderMap);
         }
-        return true;
+        return Status.SUCCESS;
     }
 
     private void help(CommandSender sender) {
         MessageHandler messageHandler = plugin.getMessageHandler();
-        messageHandler.message(sender, "<gold>----------[ <white>HiddenArmor <gold>]-----------------");
+        messageHandler.message(sender, "&6----------[ &fHiddenArmor &6]-----------------");
 
         // hiddenarmor <toggle/hide/show>
         if (sender.hasPermission("hiddenarmor.toggle") || defaultPermissionToggle)
-            messageHandler.message(sender, "<yellow>/hiddenarmor <toggle/hide/show> <gold>- %help-togglearmor%");
+            messageHandler.message(sender, "&e/hiddenarmor <toggle/hide/show> &6- %help-togglearmor%");
 
         // hiddenarmor <toggle/hide/show> <player>
         if (sender.hasPermission("hiddenarmor.toggle.other") || (defaultPermissionToggle && defaultPermissionToggleOther))
-            messageHandler.message(sender, "<yellow>/hiddenarmor <toggle/hide/show> [%player%] <gold>- %help-togglearmor-other%");
+            messageHandler.message(sender, "&e/hiddenarmor <toggle/hide/show> [%player%] &6- %help-togglearmor-other%");
 
         // hiddenarmor reload
         if (sender.hasPermission("hiddenarmor.reload"))
-            messageHandler.message(sender, "<yellow>/hiddenarmor reload <gold>- %help-reload%");
+            messageHandler.message(sender, "&e/hiddenarmor reload &6- %help-reload%");
 
         // help
-        messageHandler.message(sender, "<yellow>/hiddenarmor help <gold>- %help-help%");
+        messageHandler.message(sender, "&e/hiddenarmor help &6- %help-help%");
 
-        messageHandler.message(sender, "<gold>----------------------------------------");
+        messageHandler.message(sender, "&6----------------------------------------");
     }
 
     @Override
